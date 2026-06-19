@@ -32,11 +32,11 @@
       <div v-if="messages.length === 0" class="welcome">
         <div class="welcome-icon">
           <svg viewBox="0 0 64 64" width="64" height="64" fill="none">
-            <circle cx="32" cy="32" r="30" fill="rgba(181,230,29,0.12)" stroke="rgba(181,230,29,0.3)" stroke-width="1.5"/>
-            <path d="M32 18c-7.7 0-14 5.4-14 12 0 3.8 2 7.2 5.2 9.6L20 46l7.2-4.2c1.5.5 3.1.8 4.8.8 7.7 0 14-5.4 14-12s-6.3-12-14-12z" fill="rgba(181,230,29,0.2)" stroke="rgba(181,230,29,0.4)" stroke-width="1.5"/>
-            <circle cx="26" cy="30" r="2" fill="rgba(181,230,29,0.5)"/>
-            <circle cx="38" cy="30" r="2" fill="rgba(181,230,29,0.5)"/>
-            <path d="M28 36c0 0 1.5 2 4 2s4-2 4-2" stroke="rgba(181,230,29,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="32" cy="32" r="30" fill="rgba(34,177,76,0.12)" stroke="rgba(34,177,76,0.3)" stroke-width="1.5"/>
+            <path d="M32 18c-7.7 0-14 5.4-14 12 0 3.8 2 7.2 5.2 9.6L20 46l7.2-4.2c1.5.5 3.1.8 4.8.8 7.7 0 14-5.4 14-12s-6.3-12-14-12z" fill="rgba(34,177,76,0.2)" stroke="rgba(34,177,76,0.4)" stroke-width="1.5"/>
+            <circle cx="26" cy="30" r="2" fill="rgba(34,177,76,0.5)"/>
+            <circle cx="38" cy="30" r="2" fill="rgba(34,177,76,0.5)"/>
+            <path d="M28 36c0 0 1.5 2 4 2s4-2 4-2" stroke="rgba(34,177,76,0.5)" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </div>
         <h2 class="welcome-title">你好，我是衢小游</h2>
