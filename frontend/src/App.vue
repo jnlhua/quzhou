@@ -98,11 +98,11 @@ function handleCardMouseLeave(type) {
 }
 
 const chatGlowStyle = computed(() => ({
-  background: `radial-gradient(circle at ${chatGlow.value.x}% ${chatGlow.value.y}%, rgba(255,184,108,0.5) 0%, rgba(100,180,255,0.3) 40%, transparent 70%)`,
+  background: `radial-gradient(circle at ${chatGlow.value.x}% ${chatGlow.value.y}%, rgba(181,230,29,0.5) 0%, rgba(0,162,232,0.3) 40%, transparent 70%)`,
 }))
 
 const mapGlowStyle = computed(() => ({
-  background: `radial-gradient(circle at ${mapGlow.value.x}% ${mapGlow.value.y}%, rgba(255,184,108,0.5) 0%, rgba(100,180,255,0.3) 40%, transparent 70%)`,
+  background: `radial-gradient(circle at ${mapGlow.value.x}% ${mapGlow.value.y}%, rgba(181,230,29,0.5) 0%, rgba(0,162,232,0.3) 40%, transparent 70%)`,
 }))
 
 // ─── 全局视差效果 ───
@@ -226,7 +226,7 @@ async function handleSend(userText) {
 <style>
 /* 全局 CSS 变量 */
 :root {
-  --glow-color-1: rgba(255, 184, 108, 0.4);
+  --glow-color-1: rgba(181, 230, 29, 0.4);
   --glow-color-2: rgba(100, 180, 255, 0.3);
   --card-bg: rgba(255, 255, 255, 0.8);
   --card-border: rgba(255, 255, 255, 0.35);
@@ -301,7 +301,7 @@ async function handleSend(userText) {
 
 .c2 {
   width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(255,184,108,0.25), transparent);
+  background: radial-gradient(circle, rgba(181,230,29,0.25), transparent);
   bottom: 15%; right: 10%;
   transform: translate(calc(var(--mx, 50) * -0.015 + 0.75%), calc(var(--my, 50) * -0.015 + 0.75%));
 }

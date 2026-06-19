@@ -99,11 +99,11 @@ function renderMarkdown(text) {
 }
 
 .user-bubble {
-  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  background: linear-gradient(135deg, #B5E61D, #00A2E8);
   color: #fff;
   border-bottom-right-radius: 4px;
   padding: 10px 16px;
-  box-shadow: 0 2px 8px rgba(255,140,66,0.2);
+  box-shadow: 0 2px 8px rgba(0,162,232,0.2);
 }
 
 .bubble-content p {
@@ -122,13 +122,13 @@ function renderMarkdown(text) {
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  background: linear-gradient(135deg, #B5E61D, #00A2E8);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: 2px;
-  box-shadow: 0 2px 6px rgba(255,140,66,0.2);
+  box-shadow: 0 2px 6px rgba(0,162,232,0.2);
 }
 
 .assistant-bubble {
@@ -210,13 +210,13 @@ function renderMarkdown(text) {
   color: inherit;
 }
 .markdown-body :deep(blockquote) {
-  border-left: 3px solid #ffb86c;
+  border-left: 3px solid #B5E61D;
   padding-left: 12px;
   margin: 6px 0;
   color: rgba(0,0,0,0.5);
 }
 .markdown-body :deep(a) {
-  color: #ff8c42;
+  color: #00A2E8;
   text-decoration: none;
   font-weight: 500;
 }
@@ -236,7 +236,7 @@ function renderMarkdown(text) {
   font-size: 13px;
 }
 .markdown-body :deep(th) {
-  background: rgba(255,184,108,0.1);
+  background: rgba(181,230,29,0.1);
   font-weight: 600;
 }
 .markdown-body :deep(hr) {
@@ -264,10 +264,10 @@ function renderMarkdown(text) {
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  border: 1px solid rgba(255,140,66,0.15);
+  border: 1px solid rgba(0,162,232,0.15);
   border-radius: 10px;
-  background: rgba(255,184,108,0.06);
-  color: #ff8c42;
+  background: rgba(181,230,29,0.06);
+  color: #00A2E8;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.25s ease;
@@ -277,10 +277,10 @@ function renderMarkdown(text) {
 }
 
 .suggest-btn:hover {
-  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  background: linear-gradient(135deg, #B5E61D, #00A2E8);
   color: #fff;
   border-color: transparent;
   transform: translateX(3px);
-  box-shadow: 0 2px 8px rgba(255,140,66,0.2);
+  box-shadow: 0 2px 8px rgba(0,162,232,0.2);
 }
 </style>

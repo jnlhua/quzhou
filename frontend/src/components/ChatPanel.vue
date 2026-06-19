@@ -32,11 +32,11 @@
       <div v-if="messages.length === 0" class="welcome">
         <div class="welcome-icon">
           <svg viewBox="0 0 64 64" width="64" height="64" fill="none">
-            <circle cx="32" cy="32" r="30" fill="rgba(255,184,108,0.12)" stroke="rgba(255,184,108,0.3)" stroke-width="1.5"/>
-            <path d="M32 18c-7.7 0-14 5.4-14 12 0 3.8 2 7.2 5.2 9.6L20 46l7.2-4.2c1.5.5 3.1.8 4.8.8 7.7 0 14-5.4 14-12s-6.3-12-14-12z" fill="rgba(255,184,108,0.2)" stroke="rgba(255,184,108,0.4)" stroke-width="1.5"/>
-            <circle cx="26" cy="30" r="2" fill="rgba(255,184,108,0.5)"/>
-            <circle cx="38" cy="30" r="2" fill="rgba(255,184,108,0.5)"/>
-            <path d="M28 36c0 0 1.5 2 4 2s4-2 4-2" stroke="rgba(255,184,108,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="32" cy="32" r="30" fill="rgba(181,230,29,0.12)" stroke="rgba(181,230,29,0.3)" stroke-width="1.5"/>
+            <path d="M32 18c-7.7 0-14 5.4-14 12 0 3.8 2 7.2 5.2 9.6L20 46l7.2-4.2c1.5.5 3.1.8 4.8.8 7.7 0 14-5.4 14-12s-6.3-12-14-12z" fill="rgba(181,230,29,0.2)" stroke="rgba(181,230,29,0.4)" stroke-width="1.5"/>
+            <circle cx="26" cy="30" r="2" fill="rgba(181,230,29,0.5)"/>
+            <circle cx="38" cy="30" r="2" fill="rgba(181,230,29,0.5)"/>
+            <path d="M28 36c0 0 1.5 2 4 2s4-2 4-2" stroke="rgba(181,230,29,0.5)" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </div>
         <h2 class="welcome-title">你好，我是衢小游</h2>
@@ -169,12 +169,12 @@ watch(
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  background: linear-gradient(135deg, #B5E61D, #00A2E8);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(255,140,66,0.3);
+  box-shadow: 0 2px 8px rgba(0,162,232,0.3);
 }
 
 .brand-text h1 {
@@ -211,16 +211,16 @@ watch(
 }
 
 .map-toggle:hover {
-  border-color: rgba(255,140,66,0.3);
-  background: rgba(255,184,108,0.1);
-  color: #ff8c42;
+  border-color: rgba(0,162,232,0.3);
+  background: rgba(181,230,29,0.1);
+  color: #00A2E8;
 }
 
 .map-toggle.active {
-  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  background: linear-gradient(135deg, #B5E61D, #00A2E8);
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 2px 8px rgba(255,140,66,0.3);
+  box-shadow: 0 2px 8px rgba(0,162,232,0.3);
 }
 
 /* ─── 消息列表 ─── */
@@ -294,11 +294,11 @@ watch(
 }
 
 .quick-actions button:hover {
-  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  background: linear-gradient(135deg, #B5E61D, #00A2E8);
   color: #fff;
   border-color: transparent;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255,140,66,0.3);
+  box-shadow: 0 4px 12px rgba(0,162,232,0.3);
 }
 
 /* ─── 打字动画 ─── */
@@ -313,7 +313,7 @@ watch(
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  background: linear-gradient(135deg, #B5E61D, #00A2E8);
   animation: typing 1.4s infinite ease-in-out;
 }
 
@@ -343,8 +343,8 @@ watch(
 }
 
 .input-wrapper:focus-within {
-  border-color: rgba(255,140,66,0.3);
-  box-shadow: 0 0 0 3px rgba(255,184,108,0.1), 0 2px 8px rgba(0,0,0,0.04);
+  border-color: rgba(0,162,232,0.3);
+  box-shadow: 0 0 0 3px rgba(181,230,29,0.1), 0 2px 8px rgba(0,0,0,0.04);
   background: rgba(255,255,255,0.85);
 }
 
@@ -371,7 +371,7 @@ watch(
   height: 38px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  background: linear-gradient(135deg, #B5E61D, #00A2E8);
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -388,7 +388,7 @@ watch(
 
 .send-btn:not(:disabled):hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(255,140,66,0.35);
+  box-shadow: 0 4px 12px rgba(0,162,232,0.35);
 }
 
 .send-btn:not(:disabled):active {

@@ -80,7 +80,7 @@ function initMap() {
       title: spot.name,
       map: map,
       label: {
-        content: `<div style="font-size:12px;color:#ff8c42;background:rgba(255,255,255,0.9);padding:2px 10px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border:1px solid rgba(255,140,66,0.2);font-weight:500">${spot.name}</div>`,
+        content: `<div style="font-size:12px;color:#00A2E8;background:rgba(255,255,255,0.9);padding:2px 10px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border:1px solid rgba(0,162,232,0.2);font-weight:500">${spot.name}</div>`,
         direction: 'top',
       },
     })
@@ -101,7 +101,7 @@ function drawRoute(data) {
   if (data.polyline && data.polyline.length > 0) {
     polyline = new AMap.Polyline({
       path: data.polyline,
-      strokeColor: '#ff8c42',
+      strokeColor: '#00A2E8',
       strokeWeight: 6,
       strokeOpacity: 0.85,
       lineJoin: 'round',
@@ -259,8 +259,8 @@ onBeforeUnmount(() => {
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255,184,108,0.15);
-  border-top-color: #ff8c42;
+  border: 3px solid rgba(181,230,29,0.15);
+  border-top-color: #00A2E8;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
