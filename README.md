@@ -19,7 +19,7 @@ quzhou/
 │   │   ├── lankeshan.md     # 烂柯山景区
 │   │   └── transport.md     # 交通信息
 │   ├── processed/
-│   │   └── chunks.json      # RAG 知识库分块
+│   │   └── chunks_final.json # RAG 知识库分块
 │   └── chroma_db/           # ChromaDB 向量数据库
 └── frontend/                # Vue 3 前端
     ├── index.html           # 入口 HTML（集成高德地图 JS SDK）
@@ -164,7 +164,7 @@ SSE 流式聊天接口。
 - **美食**：烂柯卤水、龙游发糕、常山胡柚、开化清水鱼、烤饼等
 - **交通**：市内公交、长途客运、高速路网
 
-知识库分块存储在 `data/processed/chunks.json`，首次启动时自动构建 ChromaDB 向量索引。
+知识库分块存储在 `data/processed/chunks_final.json`，首次启动时自动构建 ChromaDB 向量索引。
 
 ## 工作流程
 

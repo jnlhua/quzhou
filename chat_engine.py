@@ -28,7 +28,7 @@ load_dotenv()
 # 路径配置
 # ─────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
-CHUNKS_PATH = BASE_DIR / "data" / "processed" / "chunks.json"
+CHUNKS_PATH = BASE_DIR / "data" / "processed" / "chunks_final.json"
 CHROMA_DIR = str(BASE_DIR / "data" / "chroma_db")
 BGE_M3_PATH = str(BASE_DIR / "models" / "BAAI" / "bge-m3")
 RERANKER_PATH = str(BASE_DIR / "models" / "BAAI" / "bge-reranker-base")
