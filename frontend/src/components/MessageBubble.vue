@@ -1,0 +1,286 @@
+<template>
+  <div class="message" :class="message.role">
+    <div v-if="message.role === 'user'" class="bubble user-bubble">
+      <div class="bubble-content">
+        <p>{{ message.content }}</p>
+      </div>
+    </div>
+
+    <div v-else class="assistant-wrapper">
+      <div class="assistant-avatar">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+          <polyline points="9,22 9,12 15,12 15,22"/>
+        </svg>
+      </div>
+      <div class="bubble assistant-bubble">
+        <div v-if="message.toolStatus" class="tool-status">
+          <span class="tool-icon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </span>
+          {{ message.toolStatus }}
+        </div>
+        <div v-if="message.content" class="content markdown-body" v-html="renderMarkdown(message.content)"></div>
+      </div>
+      <div v-if="isLatest && message.suggestions && message.suggestions.length > 0" class="suggestions">
+        <button
+          v-for="(s, i) in message.suggestions"
+          :key="i"
+          class="suggest-btn"
+          @click="$emit('suggest', s)"
+        >
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+          {{ s }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { marked } from 'marked'
+
+const props = defineProps({
+  message: { type: Object, required: true },
+  isLatest: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['suggest'])
+
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+})
+
+function renderMarkdown(text) {
+  let html = marked.parse(text)
+  html = html.replace(
+    /「来源：(.+?)」/g,
+    '<div class="source-tag">来源：$1</div>'
+  )
+  return html
+}
+</script>
+
+<style scoped>
+.message {
+  display: flex;
+  max-width: 100%;
+  animation: msg-in 0.3s ease-out;
+}
+
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user {
+  justify-content: flex-end;
+}
+
+.message.assistant {
+  justify-content: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* ─── 用户气泡 ─── */
+.bubble {
+  max-width: 80%;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  word-break: break-word;
+}
+
+.user-bubble {
+  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  padding: 10px 16px;
+  box-shadow: 0 2px 8px rgba(255,140,66,0.2);
+}
+
+.bubble-content p {
+  margin: 0;
+}
+
+/* ─── 助手消息 ─── */
+.assistant-wrapper {
+  max-width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.assistant-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+  box-shadow: 0 2px 6px rgba(255,140,66,0.2);
+}
+
+.assistant-bubble {
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.6);
+  color: rgba(0,0,0,0.8);
+  border-bottom-left-radius: 4px;
+  padding: 10px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.tool-status {
+  font-size: 12px;
+  color: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tool-icon {
+  display: inline-flex;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Markdown 样式 ─── */
+.markdown-body :deep(p) {
+  margin: 0 0 6px 0;
+}
+.markdown-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+.markdown-body :deep(strong) {
+  font-weight: 600;
+  color: #2d3436;
+}
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+.markdown-body :deep(li) {
+  margin: 3px 0;
+}
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3) {
+  margin: 8px 0 4px 0;
+  font-weight: 600;
+  color: #2d3436;
+}
+.markdown-body :deep(h1) { font-size: 17px; }
+.markdown-body :deep(h2) { font-size: 16px; }
+.markdown-body :deep(h3) { font-size: 15px; }
+.markdown-body :deep(code) {
+  background: rgba(0,0,0,0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #e17055;
+}
+.markdown-body :deep(pre) {
+  background: rgba(0,0,0,0.04);
+  padding: 10px 14px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 6px 0;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.markdown-body :deep(pre code) {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+.markdown-body :deep(blockquote) {
+  border-left: 3px solid #ffb86c;
+  padding-left: 12px;
+  margin: 6px 0;
+  color: rgba(0,0,0,0.5);
+}
+.markdown-body :deep(a) {
+  color: #ff8c42;
+  text-decoration: none;
+  font-weight: 500;
+}
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
+}
+.markdown-body :deep(table) {
+  border-collapse: collapse;
+  margin: 6px 0;
+  width: 100%;
+}
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  border: 1px solid rgba(0,0,0,0.08);
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 13px;
+}
+.markdown-body :deep(th) {
+  background: rgba(255,184,108,0.1);
+  font-weight: 600;
+}
+.markdown-body :deep(hr) {
+  border: none;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  margin: 10px 0;
+}
+.markdown-body :deep(.source-tag) {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.35);
+  font-style: italic;
+}
+
+/* ─── 推荐追问 ─── */
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-left: 34px;
+}
+
+.suggest-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255,140,66,0.15);
+  border-radius: 10px;
+  background: rgba(255,184,108,0.06);
+  color: #ff8c42;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: left;
+  align-self: flex-start;
+  font-family: inherit;
+}
+
+.suggest-btn:hover {
+  background: linear-gradient(135deg, #ffb86c, #ff8c42);
+  color: #fff;
+  border-color: transparent;
+  transform: translateX(3px);
+  box-shadow: 0 2px 8px rgba(255,140,66,0.2);
+}
+</style>
