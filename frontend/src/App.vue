@@ -33,8 +33,11 @@
         :messages="messages"
         :loading="loading"
         :show-map="showMap"
+        :tts-state="ttsState"
+        :speaking-index="speakingIndex"
         @send="handleSend"
         @toggle-map="showMap = !showMap"
+        @speak="handleSpeak"
       />
     </div>
 
@@ -60,11 +63,15 @@
 import { ref, reactive, computed, nextTick } from 'vue'
 import ChatPanel from './components/ChatPanel.vue'
 import MapPanel from './components/MapPanel.vue'
+import { useVoice } from './composables/useVoice.js'
 
 const messages = ref([])
 const loading = ref(false)
 const mapPanel = ref(null)
 const showMap = ref(false)
+
+// 语音播报（TTS）
+const { ttsState, speakingIndex, handleSpeak } = useVoice()
 
 const MAP_TOOLS = ['plan_route']
 

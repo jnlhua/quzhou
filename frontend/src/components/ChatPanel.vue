@@ -65,8 +65,12 @@
         v-for="(msg, i) in messages"
         :key="i"
         :message="msg"
+        :message-index="i"
         :is-latest="i === messages.length - 1 && !loading"
+        :tts-state="ttsState"
+        :speaking-index="speakingIndex"
         @suggest="$emit('send', $event)"
+        @speak="(text, index) => $emit('speak', text, index)"
       />
 
       <div v-if="loading && messages.length > 0 && !messages[messages.length - 1].content" class="typing">
@@ -78,12 +82,30 @@
 
     <!-- 输入区域 -->
     <div class="chat-input">
+      <div v-if="asrError" class="asr-error">{{ asrError }}</div>
       <div class="input-wrapper">
+        <!-- 麦克风按钮 -->
+        <button
+          @click="toggleMic"
+          :disabled="loading"
+          :class="['mic-btn', { recording: isRecording }]"
+          :title="isRecording ? '停止录音' : '语音输入'"
+        >
+          <svg v-if="!isRecording" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="6" y="6" width="12" height="12" rx="1"/>
+          </svg>
+        </button>
         <input
           v-model="inputText"
           @keyup.enter="send"
           :disabled="loading"
-          placeholder="输入你的问题，开始衢州之旅..."
+          :placeholder="isRecording ? '正在聆听...' : '输入你的问题，开始衢州之旅...'"
           class="input-field"
         />
         <button @click="send" :disabled="loading || !inputText.trim()" class="send-btn">
@@ -100,17 +122,31 @@
 <script setup>
 import { ref, nextTick, watch } from 'vue'
 import MessageBubble from './MessageBubble.vue'
+import { useVoice } from '../composables/useVoice.js'
 
 const props = defineProps({
   messages: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   showMap: { type: Boolean, default: false },
+  ttsState: { type: String, default: 'idle' },
+  speakingIndex: { type: Number, default: -1 },
 })
 
-const emit = defineEmits(['send', 'toggle-map', 'suggest'])
+const emit = defineEmits(['send', 'toggle-map', 'suggest', 'speak'])
 
 const inputText = ref('')
 const messagesContainer = ref(null)
+
+// 语音模块
+const { isRecording, asrError, startRecording, stopRecording } = useVoice()
+
+function toggleMic() {
+  if (isRecording.value) {
+    stopRecording()
+  } else {
+    startRecording(inputText)
+  }
+}
 
 function send() {
   const text = inputText.value.trim()
@@ -346,6 +382,52 @@ watch(
   border-color: rgba(0,162,232,0.3);
   box-shadow: 0 0 0 3px rgba(181,230,29,0.1), 0 2px 8px rgba(0,0,0,0.04);
   background: rgba(255,255,255,0.85);
+}
+
+/* 麦克风按钮 */
+.mic-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.04);
+  color: rgba(0,0,0,0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+  margin-left: -8px;
+}
+
+.mic-btn:hover {
+  background: rgba(181,230,29,0.15);
+  color: #00A2E8;
+}
+
+.mic-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.mic-btn.recording {
+  background: #ff4757;
+  color: #fff;
+  animation: pulse-rec 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-rec {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,71,87,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(255,71,87,0); }
+}
+
+/* ASR 错误提示 */
+.asr-error {
+  font-size: 12px;
+  color: #ff4757;
+  padding: 4px 0 0 4px;
+  margin-bottom: 2px;
 }
 
 .input-field {
