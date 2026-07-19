@@ -152,7 +152,7 @@ function clearRoute() {
   }
 }
 
-defineExpose({ drawRoute })
+defineExpose({ drawRoute, clearRoute })
 
 onBeforeUnmount(() => {
   if (map) {

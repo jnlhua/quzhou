@@ -1,10 +1,11 @@
 """
-chat_engine.py — Agent + RAG + LLM 对话引擎（ReAct 循环）
+chat_engine.py — Agent + RAG + LLM 对话引擎（多步 ReAct 循环）
 
 核心流程：
-  用户消息 → DeepSeek（带 tools 参数）
-    ├─ 返回 tool_calls → 执行工具 → 喂回结果 → 继续循环
-    └─ 无 tool_calls → RAG 检索 → DeepSeek 生成回答（流式）
+  用户消息 → 进入 ReAct 循环（最多 3 轮）
+    ├─ DeepSeek 返回 tool_calls → 执行工具 → 喂回结果 → 继续下一轮
+    └─ DeepSeek 不再返回 tool_calls → 跳出循环 → 流式生成回答
+  若全程无工具调用 → 走 RAG 检索路径
 
 路线规划特殊处理：
   plan_route 工具返回的坐标和路径通过 yield 推给 SSE，前端自动画线
@@ -61,10 +62,8 @@ SYSTEM_PROMPT = """你是「衢小游」，衢州市旅游 AI 助手。
 - 不回答衢州旅游以外的话题
 
 ## 工具使用
-- 用户问衢州天气时调用 get_weather
-- 用户问衢州路线/怎么去/导航时调用 plan_route
-- 用户问衢州附近有什么餐厅/酒店/景点时调用 search_poi
-- 如果用户的问题不需要工具，直接用参考资料回答"""
+- 你拥有一组工具可以调用，请根据工具的描述自主判断是否需要使用以及使用哪些工具
+- 只有在确实需要实时数据（天气、路线、周边搜索）时才调用工具，否则直接用参考资料回答"""
 
 # ─────────────────────────────────────────
 # 安全过滤
@@ -218,6 +217,7 @@ rag = RAGEngine()
 # ─────────────────────────────────────────
 def _execute_tool(name: str, args: dict) -> dict:
     """根据名称和参数执行工具，返回结果字典"""
+    print(f"[Agent] 调用工具: {name}({args})")
     if name not in TOOLS:
         return {"error": f"未知工具: {name}"}
     try:
@@ -278,6 +278,38 @@ def _accumulate_tool_calls(response_stream):
 
 
 # ─────────────────────────────────────────
+# 问题改写（检索失败时触发）
+# ─────────────────────────────────────────
+REWRITE_PROMPT = """你是一个查询改写助手。用户的原始问题在知识库中检索不到结果，请你将问题改写为更容易匹配到衢州旅游相关文档的形式。
+
+要求：
+1. 保持用户原始意图不变
+2. 替换口语化表达为更正式的关键词
+3. 补充可能省略的上下文（如地名默认为衢州）
+4. 只输出改写后的问题，不要解释
+
+用户原始问题：{query}
+改写后的问题："""
+
+
+def _rewrite_query(client, query: str) -> str:
+    """用 LLM 改写检索失败的查询，提高召回率"""
+    try:
+        resp = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{"role": "user", "content": REWRITE_PROMPT.format(query=query)}],
+            max_tokens=100,
+            temperature=0.1,
+        )
+        rewritten = resp.choices[0].message.content.strip()
+        # 去掉可能的引号包裹
+        rewritten = rewritten.strip('"').strip("'").strip("「」")
+        return rewritten if rewritten else query
+    except Exception:
+        return query
+
+
+# ─────────────────────────────────────────
 # 核心对话生成器
 # ─────────────────────────────────────────
 def chat_stream(user_message: str, history: list = None):
@@ -308,24 +340,53 @@ def chat_stream(user_message: str, history: list = None):
 
     full_answer = ""
     route_data = None
+    MAX_STEPS = 3  # 最大工具调用轮次，防止无限循环
 
-    # 2. 第一轮：带 tools 参数调用 DeepSeek
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=messages,
-        tools=TOOLS_SCHEMA,
-        tool_choice="auto",
-        stream=True,
-        max_tokens=1024,
-        temperature=0.3,
-    )
+    # 工具中文名映射（用于前端展示思考步骤）
+    TOOL_CN = {
+        "get_weather": "天气查询",
+        "plan_route": "路线规划",
+        "search_poi": "周边搜索",
+        "search_location": "地点查找",
+    }
 
-    # 累积 tool_calls
-    tool_calls, is_tool_call = _accumulate_tool_calls(response)
+    # ── ReAct 多步循环 ──
+    tool_used = False  # 记录是否调用过工具
 
-    # 3. ReAct 循环：如果有 tool_calls，执行工具
-    if is_tool_call:
-        # 把 assistant 的 tool_calls 追加到消息
+    for step in range(MAX_STEPS):
+        # 调用 DeepSeek（每轮都带 tools，让模型自主决定是否继续调用）
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=messages,
+            tools=TOOLS_SCHEMA,
+            tool_choice="auto",
+            stream=True,
+            max_tokens=1024,
+            temperature=0.3,
+        )
+
+        # 累积本轮的 tool_calls
+        tool_calls, is_tool_call = _accumulate_tool_calls(response)
+
+        if not is_tool_call:
+            # 模型不再请求工具 → 信息充分，准备生成回答
+            if tool_used:
+                yield {
+                    "event": "step",
+                    "data": {"step": step + 1, "label": "所有信息已满足，生成最终回答", "status": "done"},
+                }
+            break
+
+        tool_used = True
+
+        # 通知前端：AI 决定调用哪些工具
+        tool_names_cn = [TOOL_CN.get(tc["name"], tc["name"]) for tc in tool_calls]
+        yield {
+            "event": "step",
+            "data": {"step": step + 1, "label": f"分析需求 → 调用工具：{', '.join(tool_names_cn)}", "status": "done"},
+        }
+
+        # 把 assistant 的 tool_calls 追加到消息历史
         assistant_msg = {"role": "assistant", "content": None, "tool_calls": []}
         for tc in tool_calls:
             assistant_msg["tool_calls"].append({
@@ -338,7 +399,7 @@ def chat_stream(user_message: str, history: list = None):
             })
         messages.append(assistant_msg)
 
-        # 执行每个 tool_call
+        # 执行每个工具，把结果喂回消息历史
         for tc in tool_calls:
             yield {
                 "event": "message",
@@ -346,7 +407,7 @@ def chat_stream(user_message: str, history: list = None):
             }
             result = _execute_tool(tc["name"], tc["arguments"])
 
-            # 如果是路线规划且成功，提取路线数据
+            # 路线规划特殊处理：提取坐标推给前端画线
             if tc["name"] == "plan_route" and "error" not in result:
                 route_data = {
                     "origin_coord": result.get("origin_coord", ""),
@@ -369,54 +430,96 @@ def chat_stream(user_message: str, history: list = None):
                 "content": json.dumps(llm_result, ensure_ascii=False),
             })
 
-        # 4. 工具执行完，再次调用 DeepSeek 生成最终回答
-        response2 = client.chat.completions.create(
+        # 通知前端：本轮工具执行完毕，准备下一轮判断
+        if step < MAX_STEPS - 1:
+            yield {
+                "event": "step",
+                "data": {"step": step + 1, "label": "已获取工具结果，继续判断是否需要更多信息...", "status": "done"},
+            }
+
+    # ── 生成最终回答 ──
+    if tool_used:
+        # 工具路径：最后一轮模型的回复（break 时 response 已消费完，需重新调用）
+        response_final = client.chat.completions.create(
             model="deepseek-chat",
             messages=messages,
             stream=True,
             max_tokens=1024,
             temperature=0.3,
         )
-        for chunk in response2:
+        for chunk in response_final:
             delta = chunk.choices[0].delta.content if chunk.choices else ""
             if delta:
                 full_answer += delta
                 yield {"event": "message", "data": {"type": "token", "content": delta}}
-
     else:
-        # 5. 没有 tool_call → 走 RAG 检索
+        # 没有调用任何工具 → 走 RAG 检索
         docs = rag.retrieve(cleaned)
 
         if docs and docs[0].get("rerank_score", 0) >= -2:
-            # 有相关结果，注入参考资料
             context_parts = []
             for i, d in enumerate(docs, 1):
                 context_parts.append(f"【资料{i}】来源：{d['source']}\n{d['content']}")
             context = "\n\n".join(context_parts)
 
-            # 用 RAG 上下文重新构建 user message
             messages[-1] = {
                 "role": "user",
                 "content": f"参考资料：\n{context}\n\n问题：{cleaned}",
             }
 
-            response3 = client.chat.completions.create(
+            response_rag = client.chat.completions.create(
                 model="deepseek-chat",
                 messages=messages,
                 stream=True,
                 max_tokens=1024,
                 temperature=0.3,
             )
-            for chunk in response3:
+            for chunk in response_rag:
                 delta = chunk.choices[0].delta.content if chunk.choices else ""
                 if delta:
                     full_answer += delta
                     yield {"event": "message", "data": {"type": "token", "content": delta}}
         else:
-            # 无相关结果
-            fallback = "我暂时没有这方面的信息，建议拨打衢州旅游热线 0570-12301"
-            full_answer = fallback
-            yield {"event": "message", "data": {"type": "token", "content": fallback}}
+            # 首次检索失败 → 问题改写 → 重新检索
+            rewritten = _rewrite_query(client, cleaned)
+            print(f"[RAG] 检索失败，改写: '{cleaned}' → '{rewritten}'")
+
+            retry_docs = rag.retrieve(rewritten) if rewritten != cleaned else []
+
+            if retry_docs and retry_docs[0].get("rerank_score", 0) >= -2:
+                # 改写后检索成功 → 通知前端展示改写提示
+                yield {
+                    "event": "rewrite",
+                    "data": {"original": cleaned, "rewritten": rewritten},
+                }
+
+                context_parts = []
+                for i, d in enumerate(retry_docs, 1):
+                    context_parts.append(f"【资料{i}】来源：{d['source']}\n{d['content']}")
+                context = "\n\n".join(context_parts)
+
+                messages[-1] = {
+                    "role": "user",
+                    "content": f"参考资料：\n{context}\n\n问题：{rewritten}",
+                }
+
+                response_rag = client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=messages,
+                    stream=True,
+                    max_tokens=1024,
+                    temperature=0.3,
+                )
+                for chunk in response_rag:
+                    delta = chunk.choices[0].delta.content if chunk.choices else ""
+                    if delta:
+                        full_answer += delta
+                        yield {"event": "message", "data": {"type": "token", "content": delta}}
+            else:
+                # 改写后仍然检索失败 → 兜底
+                fallback = "我暂时没有这方面的信息，建议拨打衢州旅游热线 0570-12301"
+                full_answer = fallback
+                yield {"event": "message", "data": {"type": "token", "content": fallback}}
 
     # 6. 结束信号
     yield {"event": "message", "data": {"type": "done", "content": full_answer}}

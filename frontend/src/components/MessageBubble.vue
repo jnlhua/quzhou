@@ -42,6 +42,26 @@
         <span>{{ ttsBtnLabel }}</span>
       </button>
       <div class="bubble assistant-bubble">
+        <div v-if="message.steps && message.steps.length > 0" class="react-steps">
+          <div v-for="(step, i) in message.steps" :key="i" class="step-item">
+            <span class="step-icon" :class="step.status === 'running' ? 'step-running' : 'step-done'">
+              <svg v-if="step.status === 'running'" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon">
+                <path d="M12 2a10 10 0 0 1 10 10"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </span>
+            <span class="step-label">{{ step.label }}</span>
+          </div>
+        </div>
+        <div v-if="message.rewriteHint" class="rewrite-hint">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <span>您可能是想问：<strong>{{ message.rewriteHint }}</strong></span>
+        </div>
         <div v-if="message.toolStatus" class="tool-status">
           <span class="tool-icon">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -264,6 +284,71 @@ function renderMarkdown(text) {
   align-items: center;
   gap: 6px;
   margin-bottom: 4px;
+}
+
+/* ─── ReAct 思考步骤 ─── */
+.react-steps {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(0,0,0,0.08);
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  color: rgba(0,0,0,0.5);
+  animation: step-in 0.3s ease-out;
+}
+
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.step-running {
+  color: #00A2E8;
+  background: rgba(0,162,232,0.1);
+}
+
+.step-done {
+  color: #52c41a;
+  background: rgba(82,196,26,0.1);
+}
+
+.step-label {
+  line-height: 1.4;
+}
+
+/* ─── 问题改写提示 ─── */
+.rewrite-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.4);
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background: rgba(0,162,232,0.05);
+  border-radius: 8px;
+  border-left: 3px solid rgba(0,162,232,0.3);
+}
+
+.rewrite-hint strong {
+  color: #00A2E8;
+  font-weight: 500;
 }
 
 .tool-icon {

@@ -1,14 +1,15 @@
 # 衢小游 — 衢州旅游 AI 助手
 
-基于 **DeepSeek + RAG + Agent** 的衢州旅游智能问答系统，支持天气查询、路线规划、景点推荐、美食搜索等功能，前端集成高德地图实现路线可视化。
+基于 **DeepSeek + RAG + Agent** 的衢州旅游智能问答系统，支持天气查询、路线规划、景点推荐、美食搜索等功能，集成语音交互（ASR/TTS）、高德地图路线可视化、RAG 检索评估体系。
 
 ## 项目架构
 
 ```
 quzhou/
-├── main.py                  # FastAPI 后端入口，SSE 流式聊天 API
-├── chat_engine.py           # 对话引擎：Agent + RAG + LLM（ReAct 循环）
+├── main.py                  # FastAPI 后端入口，SSE 流式聊天 + 语音鉴权 API
+├── chat_engine.py           # 对话引擎：Agent + RAG + LLM（ReAct 循环 + 问题改写）
 ├── agent.py                 # 工具模块：天气/路线/POI/地理编码（高德 API）
+├── evaluate.py              # RAG 检索评估脚本（5 种策略对比）
 ├── Download.py              # 模型下载脚本（BGE-M3 / BGE-Reranker）
 ├── requirements.txt         # Python 依赖清单
 ├── .env.example             # 环境变量示例
@@ -17,13 +18,23 @@ quzhou/
 │   │   ├── food.md          # 衢州美食
 │   │   ├── jianglangshan.md # 江郎山景区
 │   │   ├── lankeshan.md     # 烂柯山景区
-│   │   └── transport.md     # 交通信息
+│   │   ├── transport.md     # 交通信息
+│   │   ├── accommodation.md # 住宿推荐
+│   │   ├── festivals.md     # 节庆活动
+│   │   ├── shopping.md      # 购物特产
+│   │   └── gengong_shuitingmen.md  # 根宫佛国/水亭门
 │   ├── processed/
-│   │   └── chunks_final.json # RAG 知识库分块
+│   │   └── chunks_final.json # RAG 知识库分块（33 条）
 │   └── chroma_db/           # ChromaDB 向量数据库
 └── frontend/                # Vue 3 前端
     ├── index.html           # 入口 HTML（集成高德地图 JS SDK）
-    └── dist/                # 生产构建产物
+    └── src/
+        ├── App.vue          # 主界面（SSE 流式接收 + 地图联动）
+        ├── components/
+        │   ├── MessageBubble.vue  # 消息气泡（思考步骤 + 改写提示）
+        │   └── MapPanel.vue       # 高德地图面板（路线绘制）
+        └── composables/
+            └── useVoice.js        # 语音交互（讯飞 ASR + TTS）
 ```
 
 ## 核心功能
@@ -31,11 +42,16 @@ quzhou/
 | 功能 | 说明 |
 |------|------|
 | 智能问答 | 基于 RAG 技术，从知识库检索衢州旅游信息并生成回答 |
+| 多步 Agent | ReAct 循环（最多 3 轮），AI 自主决定是否调用工具、调用几个 |
 | 天气查询 | 调用高德天气 API，获取实时天气 + 4 日预报 |
 | 路线规划 | 调用高德路线规划 API，支持驾车/步行，前端地图可视化 |
 | POI 搜索 | 搜索衢州周边餐厅、酒店、景点等兴趣点 |
+| 问题改写 | 检索失败时自动改写用户问题，提高召回率 |
+| 思考步骤 | 前端实时展示 AI 的推理过程（调用工具 → 获取结果 → 生成回答） |
+| 语音交互 | 讯飞 ASR 语音识别 + TTS 语音播报 |
 | 流式输出 | SSE 流式传输，打字机效果逐字显示回答 |
 | 安全过滤 | 输入清洗 + Prompt 注入防护，最多 500 字限制 |
+| 检索评估 | 内置评估脚本，对比 5 种检索策略的 Hit@K / MRR 指标 |
 
 ## 技术栈
 
@@ -47,12 +63,14 @@ quzhou/
 - **检索策略**：语义检索 + BM25 关键词检索 → RRF 融合 → Reranker 精排
 - **向量数据库**：ChromaDB
 - **地图服务**：高德地图 API（天气/地理编码/路线规划/POI 搜索）
+- **语音服务**：讯飞开放平台（ASR 语音听写 + TTS 语音合成，WebSocket 协议）
 
 ### 前端
 
 - **框架**：Vue 3 + Vite
 - **Markdown 渲染**：marked
-- **地图**：高德地图 JS API 2.0（路线绘制）
+- **地图**：高德地图 JS API 2.0（路线绘制 + Marker）
+- **语音采集**：Web Audio API（PCM 采集 + 降采样 → 讯飞 WebSocket）
 
 ## 快速开始
 
@@ -81,6 +99,11 @@ cp .env.example .env
 ```env
 DEEPSEEK_API_KEY=sk-your-deepseek-key
 AMAP_API_KEY=your-amap-key
+AMAP_JS_KEY=your-amap-js-key
+AMAP_JS_SECURITY_KEY=your-amap-js-security-key
+IFLYTEK_APP_ID=your-iflytek-app-id
+IFLYTEK_API_KEY=your-iflytek-api-key
+IFLYTEK_API_SECRET=your-iflytek-api-secret
 ```
 
 ### 3. 安装 Python 依赖
@@ -152,6 +175,8 @@ SSE 流式聊天接口。
 |------|------|
 | `event: message` / `type: token` | 流式文本片段 |
 | `event: message` / `type: tool_call` | 工具调用状态通知 |
+| `event: step` | AI 思考步骤（调用工具/获取结果/生成回答） |
+| `event: rewrite` | 问题改写提示（原始问题 + 改写后问题） |
 | `event: route` | 路线规划结果（含坐标和路径） |
 | `event: message` / `type: done` | 对话结束 |
 
@@ -169,13 +194,16 @@ SSE 流式聊天接口。
 ## 工作流程
 
 ```
-用户提问 → 安全过滤
+用户提问 → 安全过滤（注入检测 + 长度限制）
          ↓
-    DeepSeek（带 tools）
-    ├── 触发 tool_call → 执行工具（天气/路线/POI）→ 喂回结果 → 生成回答
-    └── 无 tool_call → RAG 检索（语义 + BM25 → RRF → Reranker）→ 注入上下文 → 生成回答
+    DeepSeek（带 tools，ReAct 循环，最多 3 轮）
+    ├── 触发 tool_call → 执行工具 → 结果喂回 → AI 判断是否需要继续
+    │   └── 循环直到信息充分或达到上限
+    └── 无 tool_call → RAG 检索
+         ├── 检索成功（rerank_score >= 阈值）→ 注入上下文 → 生成回答
+         └── 检索失败 → 问题改写 → 重新检索 → 成功则提示"您可能是想问"
          ↓
-    SSE 流式输出到前端
+    SSE 流式输出（思考步骤 + 打字机效果 + 地图路线）
 ```
 
 > **身份约束**：System Prompt 中明确限定衢小游只回答衢州旅游相关问题，非衢州话题会被礼貌拒绝。  
@@ -195,6 +223,24 @@ SSE 流式聊天接口。
 - **输入长度限制**：单次最多 500 字，防止恶意超长输入
 - **Prompt 注入检测**：正则匹配常见注入模式（如 `ignore previous instructions`、角色扮演、越狱指令等），命中则拒绝
 - **隐藏字符清洗**：过滤零宽字符（`\u200b` 等）和异常的连续换行
+
+## RAG 检索评估
+
+内置评估脚本 `evaluate.py`，包含 23 条测试用例（覆盖简单问题、口语化表述、模糊意图），对比 5 种检索策略：
+
+```bash
+python evaluate.py
+```
+
+| 策略 | Hit@1 | Hit@3 | MRR |
+|------|-------|-------|-----|
+| 纯语义检索（BGE-M3） | 21.7% | 39.1% | 0.283 |
+| 纯 BM25 关键词 | 34.8% | 69.6% | 0.500 |
+| 双路 RRF 融合 | 30.4% | 56.5% | 0.428 |
+| **双路 + Reranker 精排** | **60.9%** | **69.6%** | **0.652** |
+| 完整管线 + 问题改写 | 60.9% | 69.6% | 0.652 |
+
+> Reranker 精排将 Hit@1 从 30.4% 提升至 60.9%，是管线中提升最大的环节。
 
 ## 开源协议
 

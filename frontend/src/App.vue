@@ -149,10 +149,15 @@ async function handleSend(userText) {
   messages.value.push({ role: 'user', content: userText })
 
   const assistantMsg = reactive({
-    role: 'assistant', content: '', toolStatus: '', suggestions: [],
+    role: 'assistant', content: '', toolStatus: '', steps: [], suggestions: [], rewriteHint: '',
   })
   messages.value.push(assistantMsg)
   loading.value = true
+
+  // 发送新消息时清除旧路线
+  if (mapPanel.value) {
+    mapPanel.value.clearRoute()
+  }
 
   try {
     const history = messages.value.slice(0, -1).map(m => ({
@@ -194,6 +199,10 @@ async function handleSend(userText) {
               if (mapPanel.value) {
                 mapPanel.value.drawRoute(data)
               }
+            } else if (currentEvent === 'step') {
+              assistantMsg.steps.push(data)
+            } else if (currentEvent === 'rewrite') {
+              assistantMsg.rewriteHint = data.rewritten
             } else if (currentEvent === 'message') {
               if (data.type === 'token') {
                 assistantMsg.content += data.content
